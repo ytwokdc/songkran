@@ -288,6 +288,10 @@
               <div class="hint" style="margin-bottom:6px;">สีขอบ (stroke)</div>
               <input type="color" id="cfg-font-stroke" style="width:100%;height:40px;padding:2px;border-radius:8px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;">
             </div>
+            <div style="flex:1;">
+              <div class="hint" style="margin-bottom:6px;">ความหนาขอบ (px)</div>
+              <input type="number" id="cfg-font-stroke-width" min="0" max="6" step="0.5" style="width:100%;padding:10px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;font-size:0.9rem;outline:none;">
+            </div>
           </div>
           <div class="hint" style="margin-top:8px;">รีโหลดหน้าหลักหลังบันทึกเพื่อดูผล</div>
           <button class="save-btn" onclick="saveFont()">บันทึก</button>
@@ -402,8 +406,9 @@ function initSettings() {
   const fontEl = document.getElementById('cfg-font');
   fontEl.value = getSetting('floatFont', CONFIG.floatFont || 'Sarabun');
   document.getElementById('cfg-font-size').value   = getSetting('floatSize',   CONFIG.floatSize   || 1.2);
-  document.getElementById('cfg-font-color').value  = getSetting('floatColor',  CONFIG.floatColor  || '#ffffff');
-  document.getElementById('cfg-font-stroke').value = getSetting('floatStroke', CONFIG.floatStroke || '#000000');
+  document.getElementById('cfg-font-color').value        = getSetting('floatColor',       CONFIG.floatColor       || '#ffffff');
+  document.getElementById('cfg-font-stroke').value       = getSetting('floatStroke',      CONFIG.floatStroke      || '#000000');
+  document.getElementById('cfg-font-stroke-width').value = getSetting('floatStrokeWidth', CONFIG.floatStrokeWidth || 1);
 }
 
 function saveBtnNames() {
@@ -430,7 +435,7 @@ async function resetClicks() {
     await fetch(url, {
       method: 'POST',
       mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'reset' })
     });
     alert('✅ ล้างข้อมูลแล้ว กำลังรีโหลด...');
@@ -471,14 +476,16 @@ function exportExcel() {
 }
 
 function saveFont() {
-  const font  = document.getElementById('cfg-font').value;
-  const size  = parseFloat(document.getElementById('cfg-font-size').value);
-  const color = document.getElementById('cfg-font-color').value;
-  const stroke= document.getElementById('cfg-font-stroke').value;
-  setSetting('floatFont',   font);
-  setSetting('floatSize',   size || 1.2);
-  setSetting('floatColor',  color);
-  setSetting('floatStroke', stroke);
+  const font        = document.getElementById('cfg-font').value;
+  const size        = parseFloat(document.getElementById('cfg-font-size').value);
+  const color       = document.getElementById('cfg-font-color').value;
+  const stroke      = document.getElementById('cfg-font-stroke').value;
+  const strokeWidth = parseFloat(document.getElementById('cfg-font-stroke-width').value);
+  setSetting('floatFont',        font);
+  setSetting('floatSize',        size || 1.2);
+  setSetting('floatColor',       color);
+  setSetting('floatStroke',      stroke);
+  setSetting('floatStrokeWidth', strokeWidth || 1);
   showOk('ok-font');
 }
 

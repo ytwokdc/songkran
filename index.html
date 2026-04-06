@@ -12,6 +12,7 @@
     --float-size: 1.2rem;
     --float-color: #ffffff;
     --float-stroke: #000000;
+    --float-stroke-w: 1px;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
@@ -90,10 +91,10 @@
     color: var(--float-color);
     /* stroke ด้วย text-shadow แทน outline เพื่อไม่ให้ fuzzy */
     text-shadow:
-      -1px -1px 0 var(--float-stroke),
-       1px -1px 0 var(--float-stroke),
-      -1px  1px 0 var(--float-stroke),
-       1px  1px 0 var(--float-stroke);
+      calc(-1 * var(--float-stroke-w)) calc(-1 * var(--float-stroke-w)) 0 var(--float-stroke),
+      var(--float-stroke-w)            calc(-1 * var(--float-stroke-w)) 0 var(--float-stroke),
+      calc(-1 * var(--float-stroke-w)) var(--float-stroke-w)            0 var(--float-stroke),
+      var(--float-stroke-w)            var(--float-stroke-w)            0 var(--float-stroke);
     white-space: nowrap;
     letter-spacing: 0.02em;
     animation: floatUp 1.5s ease-out forwards;
@@ -141,7 +142,8 @@ const CFG = {
   floatFont:   getSetting('floatFont',   CONFIG.floatFont   || 'Sarabun'),
   floatSize:   getSetting('floatSize',   CONFIG.floatSize   || 1.2),
   floatColor:  getSetting('floatColor',  CONFIG.floatColor  || '#ffffff'),
-  floatStroke: getSetting('floatStroke', CONFIG.floatStroke || '#000000'),
+  floatStroke:      getSetting('floatStroke',      CONFIG.floatStroke      || '#000000'),
+  floatStrokeWidth: getSetting('floatStrokeWidth', CONFIG.floatStrokeWidth || 1),
 };
 
 // ใส่ CSS variable จาก config
@@ -149,7 +151,8 @@ const root = document.documentElement;
 root.style.setProperty('--float-font', `'${CFG.floatFont}', sans-serif`);
 root.style.setProperty('--float-size', CFG.floatSize + 'rem');
 root.style.setProperty('--float-color', CFG.floatColor);
-root.style.setProperty('--float-stroke', CFG.floatStroke);
+root.style.setProperty('--float-stroke',   CFG.floatStroke);
+root.style.setProperty('--float-stroke-w', CFG.floatStrokeWidth + 'px');
 
 // CURSOR
 const cursorEl = document.getElementById('custom-cursor');
@@ -243,7 +246,7 @@ function recordClick(btnNum) {
   fetch(CFG.scriptUrl, {
     method: 'POST',
     mode: 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({ button: btnNum })
   }).catch(() => {});
 }
