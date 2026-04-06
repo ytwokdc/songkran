@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>สงกรานต์</title>
+<title>สงกรานต์ - Live</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;800&family=Anuphan:wght@400;700;800&display=swap" rel="stylesheet">
 <script src="config.js"></script>
 <style>
@@ -33,6 +33,34 @@
     transform: translate(-20%, -10%);
     height: auto;
     transition: width 0.08s ease;
+  }
+
+  /* Online counter */
+  #online-badge {
+    position: fixed;
+    top: 16px;
+    right: 20px;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    color: #fff;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dot-live {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #2ecc71;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.4; transform: scale(0.7); }
   }
 
   .banner-wrap {
@@ -78,7 +106,21 @@
 
   .btn-item:active img.btn-img { transform: scale(0.95); }
 
-  /* float text ใช้ CSS variable ทั้งหมด — ปรับได้จาก admin */
+  /* ripple วงแสงเมื่อมีคนอื่นกด */
+  .btn-item .ripple {
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    pointer-events: none;
+    animation: rippleOut 0.7s ease-out forwards;
+    z-index: 5;
+  }
+  @keyframes rippleOut {
+    0%   { box-shadow: 0 0 0 0px rgba(255,220,80,0.7); }
+    100% { box-shadow: 0 0 0 22px rgba(255,220,80,0); }
+  }
+
+  /* float text */
   .float-text {
     position: absolute;
     left: 50%;
@@ -88,7 +130,6 @@
     font-size: var(--float-size);
     font-weight: 800;
     color: var(--float-color);
-    /* stroke ด้วย text-shadow แทน outline เพื่อไม่ให้ fuzzy */
     text-shadow:
       -1px -1px 0 var(--float-stroke),
        1px -1px 0 var(--float-stroke),
@@ -98,9 +139,13 @@
     letter-spacing: 0.02em;
     animation: floatUp 1.5s ease-out forwards;
     z-index: 1000;
-    /* ป้องกันภาพเบลอจาก subpixel */
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* float text ของ simulated user — สีต่างออกไปนิดหน่อย */
+  .float-text.other {
+    opacity: 0.75;
+    font-size: calc(var(--float-size) * 0.88);
   }
 
   @keyframes floatUp {
@@ -115,6 +160,12 @@
 </head>
 <body>
 
+<!-- Live counter -->
+<div id="online-badge">
+  <div class="dot-live"></div>
+  <span id="online-count">...</span> คนกำลังเล่น
+</div>
+
 <div class="banner-wrap">
   <img src="images/banner.png" alt="">
 </div>
@@ -127,6 +178,7 @@
 <img id="custom-cursor" src="images/cursor_normal.png" alt="">
 
 <script>
+// ===== CONFIG =====
 function getSetting(key, fallback) {
   const saved = localStorage.getItem('cfg_' + key);
   return saved !== null ? JSON.parse(saved) : fallback;
@@ -144,14 +196,13 @@ const CFG = {
   floatStroke: getSetting('floatStroke', CONFIG.floatStroke || '#000000'),
 };
 
-// ใส่ CSS variable จาก config
 const root = document.documentElement;
-root.style.setProperty('--float-font', `'${CFG.floatFont}', sans-serif`);
-root.style.setProperty('--float-size', CFG.floatSize + 'rem');
-root.style.setProperty('--float-color', CFG.floatColor);
+root.style.setProperty('--float-font',   `'${CFG.floatFont}', sans-serif`);
+root.style.setProperty('--float-size',   CFG.floatSize + 'rem');
+root.style.setProperty('--float-color',  CFG.floatColor);
 root.style.setProperty('--float-stroke', CFG.floatStroke);
 
-// CURSOR
+// ===== CURSOR =====
 const cursorEl = document.getElementById('custom-cursor');
 cursorEl.style.width = CFG.cursorSize.normal + 'px';
 
@@ -160,13 +211,16 @@ document.addEventListener('mousemove', e => {
   cursorEl.style.top  = e.clientY + 'px';
 });
 
-// BUILD BUTTONS
+// ===== BUILD BUTTONS =====
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+const btnWraps = {}; // เก็บ reference ทุกปุ่ม
 
 function buildButton(num) {
   const id = pad(num);
   const wrap = document.createElement('div');
   wrap.className = 'btn-item';
+  btnWraps[num] = wrap;
 
   const img = document.createElement('img');
   img.className = 'btn-img';
@@ -195,7 +249,7 @@ function buildButton(num) {
     cursorEl.src = 'images/cursor_click.png';
     cursorEl.style.width = CFG.cursorSize.click + 'px';
     playClick();
-    spawnText(wrap);
+    spawnText(wrap, false);
     recordClick(num);
     setTimeout(() => {
       img.src = hovered ? `images/${id}_over.png` : `images/${id}_normal.png`;
@@ -210,34 +264,58 @@ function buildButton(num) {
 [1,2,3,4,5,6].forEach(n => document.getElementById('row1').appendChild(buildButton(n)));
 [7,8,9,10,11].forEach(n => document.getElementById('row2').appendChild(buildButton(n)));
 
-// FLOAT TEXT
+// ===== FLOAT TEXT =====
 let msgIdx = 0;
-function spawnText(parent) {
+function spawnText(parent, isOther) {
   const el = document.createElement('div');
-  el.className = 'float-text';
+  el.className = 'float-text' + (isOther ? ' other' : '');
   el.textContent = CFG.messages[msgIdx++ % CFG.messages.length];
   el.style.left = (50 + (Math.random() - 0.5) * 40) + '%';
   parent.appendChild(el);
   setTimeout(() => el.remove(), 1600);
 }
 
-// SOUND
+// ripple effect เมื่อ "คนอื่น" กด
+function triggerOtherClick(btnNum) {
+  const wrap = btnWraps[btnNum];
+  if (!wrap) return;
+
+  // ripple
+  const r = document.createElement('div');
+  r.className = 'ripple';
+  wrap.appendChild(r);
+  setTimeout(() => r.remove(), 700);
+
+  // float text
+  spawnText(wrap, true);
+
+  // เสียงเบาๆ
+  playClickSoft();
+}
+
+// ===== SOUND =====
 function playClick() {
+  playTone(880, 440, 0.3, 0.3);
+}
+function playClickSoft() {
+  playTone(660, 330, 0.08, 0.25); // เบากว่า
+}
+function playTone(freqStart, freqEnd, vol, dur) {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain); gain.connect(ctx.destination);
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.15);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-    osc.start(); osc.stop(ctx.currentTime + 0.3);
+    osc.frequency.setValueAtTime(freqStart, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(freqEnd, ctx.currentTime + dur * 0.5);
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    osc.start(); osc.stop(ctx.currentTime + dur);
   } catch(e) {}
 }
 
-// RECORD CLICK
+// ===== RECORD CLICK =====
 function recordClick(btnNum) {
   if (!CFG.scriptUrl || CFG.scriptUrl === 'YOUR_APPS_SCRIPT_URL_HERE') return;
   fetch(CFG.scriptUrl, {
@@ -247,6 +325,48 @@ function recordClick(btnNum) {
     body: JSON.stringify({ button: btnNum })
   }).catch(() => {});
 }
+
+// ===== SIMULATED ACTIVITY =====
+// จำลองผู้ใช้คนอื่นที่กำลังเล่นอยู่
+
+// จำนวน "คนออนไลน์" สุ่มในช่วงที่สมจริง
+let fakeOnline = Math.floor(Math.random() * 18) + 12; // 12-30 คน
+document.getElementById('online-count').textContent = fakeOnline;
+
+// ค่อยๆ ขยับจำนวนคนออนไลน์ให้ดูมีชีวิต
+setInterval(() => {
+  const delta = Math.random() < 0.5 ? 1 : -1;
+  fakeOnline = Math.max(5, Math.min(60, fakeOnline + delta));
+  document.getElementById('online-count').textContent = fakeOnline;
+}, 8000);
+
+// สุ่มคลิกจาก "คนอื่น" ตามความน่าจะเป็นของแต่ละปุ่ม
+// ปุ่มที่น่าดึงดูดกว่าจะถูกกดบ่อยกว่า (ถ่วงน้ำหนัก)
+const btnWeights = [8, 6, 10, 7, 9, 8, 5, 11, 6, 9, 7]; // น้ำหนักปุ่ม 1-11
+const totalWeight = btnWeights.reduce((a, b) => a + b, 0);
+
+function weightedRandom() {
+  let r = Math.random() * totalWeight;
+  for (let i = 0; i < btnWeights.length; i++) {
+    r -= btnWeights[i];
+    if (r <= 0) return i + 1;
+  }
+  return 11;
+}
+
+function scheduleNextActivity() {
+  // ระยะเวลาระหว่างคลิก: 0.8 - 4 วินาที (ยิ่งคนเยอะ ยิ่งถี่)
+  const baseDelay = Math.max(800, 4000 - fakeOnline * 80);
+  const delay = baseDelay * (0.5 + Math.random());
+
+  setTimeout(() => {
+    triggerOtherClick(weightedRandom());
+    scheduleNextActivity();
+  }, delay);
+}
+
+// เริ่ม activity หลังจาก 2 วินาที (ให้หน้าโหลดก่อน)
+setTimeout(scheduleNextActivity, 2000);
 </script>
 </body>
 </html>
