@@ -19,7 +19,6 @@
     overflow-x: hidden;
   }
 
-  /* ===== CUSTOM CURSOR ===== */
   #custom-cursor {
     position: fixed;
     pointer-events: none;
@@ -29,7 +28,6 @@
     transition: width 0.08s ease;
   }
 
-  /* ===== BANNER ===== */
   .banner-wrap {
     width: 100%;
     max-width: 1200px;
@@ -37,13 +35,8 @@
     display: flex;
     justify-content: center;
   }
-  .banner-wrap img {
-    width: 100%;
-    height: auto;
-    display: block;
-  }
+  .banner-wrap img { width: 100%; height: auto; display: block; }
 
-  /* ===== BUTTON GRID ===== */
   .grid-wrap {
     width: 100%;
     max-width: 1200px;
@@ -71,17 +64,13 @@
 
   .btn-item img.btn-img {
     display: block;
-    width: var(--btn-width, 160px);
     height: auto;
     transition: transform 0.08s ease;
     -webkit-user-drag: none;
   }
 
-  .btn-item:active img.btn-img {
-    transform: scale(0.95);
-  }
+  .btn-item:active img.btn-img { transform: scale(0.95); }
 
-  /* ===== FLOAT TEXT ===== */
   .float-text {
     position: absolute;
     left: 50%;
@@ -89,11 +78,12 @@
     pointer-events: none;
     font-size: 1.1rem;
     font-weight: 800;
-    color: #fff;
+    color: #00aaff;
     text-shadow:
-      0 0 12px rgba(255,120,0,1),
-      0 0 24px rgba(255,200,0,0.8),
-      0 2px 6px rgba(0,0,0,0.6);
+      -2px -2px 0 #000,
+       2px -2px 0 #000,
+      -2px  2px 0 #000,
+       2px  2px 0 #000;
     white-space: nowrap;
     animation: floatUp 1.5s ease-out forwards;
     z-index: 1000;
@@ -107,11 +97,9 @@
 
   @media (max-width: 900px) {
     .btn-row { gap: 8px; }
-    .btn-item img.btn-img { width: 110px; }
   }
   @media (max-width: 600px) {
     .btn-row { flex-wrap: wrap; }
-    .btn-item img.btn-img { width: 85px; }
   }
 </style>
 </head>
@@ -129,13 +117,30 @@
 <img id="custom-cursor" src="images/cursor_normal.png" alt="">
 
 <script>
+// ===== โหลดค่าจาก localStorage ทับ config.js =====
+function getSetting(key, fallback) {
+  const saved = localStorage.getItem('cfg_' + key);
+  return saved !== null ? JSON.parse(saved) : fallback;
+}
+
+const CFG = {
+  messages:    getSetting('messages',    CONFIG.messages),
+  buttonNames: getSetting('buttonNames', CONFIG.buttonNames),
+  scriptUrl:   getSetting('scriptUrl',   CONFIG.scriptUrl),
+  buttonWidth: getSetting('buttonWidth', CONFIG.buttonWidth),
+  cursorSize:  getSetting('cursorSize',  CONFIG.cursorSize),
+};
+
+// ===== CURSOR =====
 const cursorEl = document.getElementById('custom-cursor');
-const row1 = document.getElementById('row1');
-const row2 = document.getElementById('row2');
+cursorEl.style.width = CFG.cursorSize.normal + 'px';
 
-document.documentElement.style.setProperty('--btn-width', CONFIG.buttonWidth + 'px');
-cursorEl.style.width = CONFIG.cursorSize.normal + 'px';
+document.addEventListener('mousemove', e => {
+  cursorEl.style.left = e.clientX + 'px';
+  cursorEl.style.top  = e.clientY + 'px';
+});
 
+// ===== BUILD BUTTONS =====
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
 
 function buildButton(num) {
@@ -145,8 +150,9 @@ function buildButton(num) {
 
   const img = document.createElement('img');
   img.className = 'btn-img';
+  img.style.width = CFG.buttonWidth + 'px';
   img.src = `images/${id}_normal.png`;
-  img.alt = CONFIG.buttonNames[num - 1] || `ปุ่มที่ ${num}`;
+  img.alt = CFG.buttonNames[num - 1] || `ปุ่มที่ ${num}`;
   img.draggable = false;
   wrap.appendChild(img);
 
@@ -156,49 +162,46 @@ function buildButton(num) {
     hovered = true;
     img.src = `images/${id}_over.png`;
     cursorEl.src = 'images/cursor_over.png';
-    cursorEl.style.width = CONFIG.cursorSize.over + 'px';
+    cursorEl.style.width = CFG.cursorSize.over + 'px';
   });
   wrap.addEventListener('mouseleave', () => {
     hovered = false;
     img.src = `images/${id}_normal.png`;
     cursorEl.src = 'images/cursor_normal.png';
-    cursorEl.style.width = CONFIG.cursorSize.normal + 'px';
+    cursorEl.style.width = CFG.cursorSize.normal + 'px';
   });
   wrap.addEventListener('mousedown', () => {
     img.src = `images/${id}_click.png`;
     cursorEl.src = 'images/cursor_click.png';
-    cursorEl.style.width = CONFIG.cursorSize.click + 'px';
+    cursorEl.style.width = CFG.cursorSize.click + 'px';
     playClick();
     spawnText(wrap);
     recordClick(num);
     setTimeout(() => {
       img.src = hovered ? `images/${id}_over.png` : `images/${id}_normal.png`;
       cursorEl.src = hovered ? 'images/cursor_over.png' : 'images/cursor_normal.png';
-      cursorEl.style.width = (hovered ? CONFIG.cursorSize.over : CONFIG.cursorSize.normal) + 'px';
+      cursorEl.style.width = (hovered ? CFG.cursorSize.over : CFG.cursorSize.normal) + 'px';
     }, 280);
   });
 
   return wrap;
 }
 
-[1,2,3,4,5].forEach(n => row1.appendChild(buildButton(n)));
-[6,7,8,9,10,11].forEach(n => row2.appendChild(buildButton(n)));
+[1,2,3,4,5,6].forEach(n => document.getElementById('row1').appendChild(buildButton(n)));
+[7,8,9,10,11].forEach(n => document.getElementById('row2').appendChild(buildButton(n)));
 
-document.addEventListener('mousemove', e => {
-  cursorEl.style.left = e.clientX + 'px';
-  cursorEl.style.top  = e.clientY + 'px';
-});
-
+// ===== FLOAT TEXT =====
 let msgIdx = 0;
 function spawnText(parent) {
   const el = document.createElement('div');
   el.className = 'float-text';
-  el.textContent = CONFIG.messages[msgIdx++ % CONFIG.messages.length];
+  el.textContent = CFG.messages[msgIdx++ % CFG.messages.length];
   el.style.left = (50 + (Math.random() - 0.5) * 40) + '%';
   parent.appendChild(el);
   setTimeout(() => el.remove(), 1600);
 }
 
+// ===== SOUND =====
 function playClick() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -214,9 +217,10 @@ function playClick() {
   } catch(e) {}
 }
 
+// ===== RECORD CLICK =====
 function recordClick(btnNum) {
-  if (!CONFIG.scriptUrl || CONFIG.scriptUrl === 'YOUR_APPS_SCRIPT_URL_HERE') return;
-  fetch(CONFIG.scriptUrl, {
+  if (!CFG.scriptUrl || CFG.scriptUrl === 'YOUR_APPS_SCRIPT_URL_HERE') return;
+  fetch(CFG.scriptUrl, {
     method: 'POST',
     mode: 'no-cors',
     headers: { 'Content-Type': 'application/json' },
