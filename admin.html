@@ -431,23 +431,21 @@ async function resetClicks() {
 
   const url = getSetting('scriptUrl', CONFIG.scriptUrl);
   if (!url || url === 'YOUR_APPS_SCRIPT_URL_HERE') {
-    alert('❌ ยังไม่ได้ตั้งค่า Apps Script URL\nกรุณาตั้งค่าในแท็บ "ตั้งค่า" ก่อน');
+    alert('❌ ยังไม่ได้ตั้งค่า Apps Script URL');
     return;
   }
 
-  try {
-    // ใช้ GET แทน POST — ไม่มีปัญหา CORS
-    const res = await fetch(url + '?action=reset&t=' + Date.now());
-    const data = await res.json();
-    if (data.status === 'reset ok') {
-      alert('✅ ล้างข้อมูลเรียบร้อยแล้ว');
-      setTimeout(loadData, 800);
-    } else {
-      alert('❌ Apps Script ตอบกลับผิดปกติ: ' + JSON.stringify(data));
-    }
-  } catch(e) {
-    alert('❌ เชื่อมต่อไม่ได้: ' + e.message);
-  }
+  // ใช้ POST เหมือนกับการนับคลิก ซึ่งทำงานได้แน่นอน
+  fetch(url, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'reset' })
+  }).catch(() => {});
+
+  // รอ 2 วินาทีแล้วโหลดข้อมูลใหม่
+  alert('✅ ส่งคำสั่งล้างข้อมูลแล้ว กด OK แล้วรอสักครู่');
+  setTimeout(loadData, 2000);
 }
 
 // ===== EXPORT EXCEL (CSV) =====
