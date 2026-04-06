@@ -433,7 +433,7 @@ async function resetClicks() {
 
   try {
     // ใช้ GET แทน POST — ไม่มีปัญหา CORS
-    const res = await fetch(url + '?action=reset');
+    const res = await fetch(url + '?action=reset&t=' + Date.now());
     const data = await res.json();
     if (data.status === 'reset ok') {
       alert('✅ ล้างข้อมูลเรียบร้อยแล้ว');
@@ -559,7 +559,7 @@ async function loadData() {
 
   if (url && url !== 'YOUR_APPS_SCRIPT_URL_HERE') {
     try {
-      const res = await fetch(url + '?action=get');
+      const res = await fetch(url + '?action=get&t=' + Date.now());
       const data = await res.json();
       clicks = data.clicks || clicks;
     } catch(e) { console.warn('fetch error', e); }
