@@ -268,6 +268,32 @@
           <div class="save-ok" id="ok-cursor">✅ บันทึกแล้ว! รีโหลดหน้าหลักเพื่อดูผล</div>
         </div>
 
+        <!-- Font Settings -->
+        <div class="setting-card">
+          <h3>ตัวอักษรลอย</h3>
+          <div class="row-labels"><span>ฟอนต์</span><span>ขนาด (rem)</span></div>
+          <div class="row-inputs">
+            <select id="cfg-font" style="flex:1;padding:10px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;font-size:0.9rem;outline:none;">
+              <option value="Sarabun">Sarabun</option>
+              <option value="Anuphan">Anuphan</option>
+            </select>
+            <input type="number" id="cfg-font-size" min="0.6" max="4" step="0.1" style="flex:1;">
+          </div>
+          <div style="display:flex;gap:16px;margin-top:12px;">
+            <div style="flex:1;">
+              <div class="hint" style="margin-bottom:6px;">สีตัวอักษร</div>
+              <input type="color" id="cfg-font-color" style="width:100%;height:40px;padding:2px;border-radius:8px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;">
+            </div>
+            <div style="flex:1;">
+              <div class="hint" style="margin-bottom:6px;">สีขอบ (stroke)</div>
+              <input type="color" id="cfg-font-stroke" style="width:100%;height:40px;padding:2px;border-radius:8px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;">
+            </div>
+          </div>
+          <div class="hint" style="margin-top:8px;">รีโหลดหน้าหลักหลังบันทึกเพื่อดูผล</div>
+          <button class="save-btn" onclick="saveFont()">บันทึก</button>
+          <div class="save-ok" id="ok-font">บันทึกแล้ว!</div>
+        </div>
+
         <!-- Admin Password -->
         <div class="setting-card">
           <h3>🔑 เปลี่ยนรหัสผ่าน Admin</h3>
@@ -371,6 +397,13 @@ function initSettings() {
   document.getElementById('cfg-cur-normal').value = cs.normal;
   document.getElementById('cfg-cur-over').value   = cs.over;
   document.getElementById('cfg-cur-click').value  = cs.click;
+
+  // Font settings
+  const fontEl = document.getElementById('cfg-font');
+  fontEl.value = getSetting('floatFont', CONFIG.floatFont || 'Sarabun');
+  document.getElementById('cfg-font-size').value   = getSetting('floatSize',   CONFIG.floatSize   || 1.2);
+  document.getElementById('cfg-font-color').value  = getSetting('floatColor',  CONFIG.floatColor  || '#ffffff');
+  document.getElementById('cfg-font-stroke').value = getSetting('floatStroke', CONFIG.floatStroke || '#000000');
 }
 
 function saveBtnNames() {
@@ -435,6 +468,18 @@ function exportExcel() {
   a.download = `songkran_clicks_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function saveFont() {
+  const font  = document.getElementById('cfg-font').value;
+  const size  = parseFloat(document.getElementById('cfg-font-size').value);
+  const color = document.getElementById('cfg-font-color').value;
+  const stroke= document.getElementById('cfg-font-stroke').value;
+  setSetting('floatFont',   font);
+  setSetting('floatSize',   size || 1.2);
+  setSetting('floatColor',  color);
+  setSetting('floatStroke', stroke);
+  showOk('ok-font');
 }
 
 // ===== SAVE FUNCTIONS =====
