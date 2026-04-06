@@ -432,16 +432,17 @@ async function resetClicks() {
   }
 
   try {
-    await fetch(url, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'reset' })
-    });
-    alert('✅ ล้างข้อมูลแล้ว กำลังรีโหลด...');
-    setTimeout(loadData, 1000);
+    // ใช้ GET แทน POST — ไม่มีปัญหา CORS
+    const res = await fetch(url + '?action=reset');
+    const data = await res.json();
+    if (data.status === 'reset ok') {
+      alert('✅ ล้างข้อมูลเรียบร้อยแล้ว');
+      setTimeout(loadData, 800);
+    } else {
+      alert('❌ Apps Script ตอบกลับผิดปกติ: ' + JSON.stringify(data));
+    }
   } catch(e) {
-    alert('❌ เกิดข้อผิดพลาด กรุณาล้างใน Google Sheet โดยตรง');
+    alert('❌ เชื่อมต่อไม่ได้: ' + e.message);
   }
 }
 
