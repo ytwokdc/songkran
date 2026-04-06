@@ -31,15 +31,15 @@ const CONFIG = {
   ],
 
   // --- URL ของ Google Apps Script (ใส่หลังจาก Deploy) ---
-  scriptUrl: 'https://script.google.com/macros/s/AKfycbyw18o79earBTC4_dqA3U-0swXRI1g28Md1mF8WCYX-66XKj5sSxPw6GEc9hLWQsEZ5Lw/exec',
+  scriptUrl: 'https://script.google.com/macros/s/AKfycbwx0DTMKzuE8Ziw5BbSWjBAjSj7xv1cQ06d2Wj02XS_PYl6ur-Rb-Jy1Exo5GgyefnD3g/exec',
 
   // --- รหัสผ่านหน้า Admin ---
   adminPassword: 'admin1234',
 
   // --- ขนาดปุ่มบนหน้าเว็บ (px) ---
-  buttonWidth: 160,
+  buttonWidth: 200,
 
   // --- ขนาด cursor (px) ---
-  cursorSize: { normal: 180, over: 160, click: 140 },
+  cursorSize: { normal: 90, over: 80, click: 70 },
 
 };
