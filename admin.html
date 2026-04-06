@@ -237,8 +237,12 @@
         <!-- Script URL -->
         <div class="setting-card">
           <h3>🔗 Google Apps Script URL</h3>
-          <input type="text" id="cfg-url" placeholder="https://script.google.com/macros/s/...">
-          <div class="hint">URL จาก Deploy Apps Script สำหรับเก็บข้อมูลคลิก</div>
+          <textarea id="cfg-url" placeholder="https://script.google.com/macros/s/..." 
+            rows="3" style="min-height:unset;resize:none;word-break:break-all;"
+            onkeydown="return event.key!=' '"
+            onpaste="setTimeout(()=>{this.value=this.value.replace(/\s+/g,'')},0)"
+          ></textarea>
+          <div class="hint">วาง URL จาก Apps Script — ระบบจะตัด space ออกให้อัตโนมัติ</div>
           <button class="save-btn" onclick="saveUrl()">💾 บันทึก</button>
           <div class="save-ok" id="ok-url">✅ บันทึกแล้ว!</div>
         </div>
@@ -393,7 +397,7 @@ function initSettings() {
   document.getElementById('cfg-messages').value = msgs.join('\n');
 
   const url = getSetting('scriptUrl', CONFIG.scriptUrl);
-  document.getElementById('cfg-url').value = url !== 'YOUR_APPS_SCRIPT_URL_HERE' ? url : '';
+  document.getElementById('cfg-url').value = url !== 'YOUR_APPS_SCRIPT_URL_HERE' ? url.replace(/\s+/g,'') : '';
 
   document.getElementById('cfg-btnsize').value = getSetting('buttonWidth', CONFIG.buttonWidth);
 
@@ -499,7 +503,7 @@ function saveMessages() {
 }
 
 function saveUrl() {
-  const url = document.getElementById('cfg-url').value.trim();
+  const url = document.getElementById('cfg-url').value.replace(/\s+/g, '');
   setSetting('scriptUrl', url);
   showOk('ok-url');
 }
