@@ -50,8 +50,8 @@ const CONFIG = {
   // --- ตัวอักษรลอย ---
   floatFont:        'Anuphan',   // Sarabun หรือ Anuphan
   floatSize:        1.2,         // ขนาด (rem)
-  floatColor:       '#ff5cb4',   // สีตัวอักษร
+  floatColor:       '#fffaa3',   // สีตัวอักษร
   floatStroke:      '#000000',   // สีขอบ
-  floatStrokeWidth: 1,           // ความหนาขอบ (px) 0-6
+  floatStrokeWidth: 2,           // ความหนาขอบ (px) 0-6
 
 };
