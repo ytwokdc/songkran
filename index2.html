@@ -36,32 +36,6 @@
     transition: width 0.08s ease;
   }
 
-  #online-badge {
-    position: fixed;
-    top: 16px;
-    right: 20px;
-    background: rgba(0,0,0,0.45);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 0.82rem;
-    color: #fff;
-    z-index: 998;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .dot-live {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: #2ecc71;
-    animation: pulse 1.6s ease-in-out infinite;
-  }
-  @keyframes pulse {
-    0%,100% { opacity: 1; transform: scale(1); }
-    50%      { opacity: 0.4; transform: scale(0.7); }
-  }
-
   .banner-wrap {
     width: 100%;
     max-width: 1200px;
@@ -174,11 +148,6 @@
 <audio id="bg-music" loop preload="auto">
   <source src="images/music.mp3" type="audio/mpeg">
 </audio>
-
-<div id="online-badge">
-  <div class="dot-live"></div>
-  <span id="online-count">...</span> คนกำลังเล่น
-</div>
 
 <div class="banner-wrap">
   <img src="images/banner.png" alt="">
@@ -359,12 +328,10 @@ function recordClick(btnNum) {
 
 // SIMULATED ACTIVITY
 let fakeOnline = Math.floor(Math.random() * 80) + 40;
-document.getElementById('online-count').textContent = fakeOnline;
 
 setInterval(() => {
   const delta = Math.floor(Math.random() * 5) - 2;
   fakeOnline = Math.max(40, Math.min(120, fakeOnline + delta));
-  document.getElementById('online-count').textContent = fakeOnline;
 }, 8000);
 
 const btnWeights = [8,6,10,7,9,8,5,11,6,9,7];
