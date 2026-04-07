@@ -358,11 +358,12 @@ function recordClick(btnNum) {
 }
 
 // SIMULATED ACTIVITY
-let fakeOnline = Math.floor(Math.random() * 18) + 12;
+let fakeOnline = Math.floor(Math.random() * 80) + 40;
 document.getElementById('online-count').textContent = fakeOnline;
 
 setInterval(() => {
-  fakeOnline = Math.max(8, Math.min(60, fakeOnline + (Math.random() < 0.5 ? 1 : -1)));
+  const delta = Math.floor(Math.random() * 5) - 2;
+  fakeOnline = Math.max(40, Math.min(120, fakeOnline + delta));
   document.getElementById('online-count').textContent = fakeOnline;
 }, 8000);
 
