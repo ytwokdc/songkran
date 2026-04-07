@@ -639,7 +639,7 @@ function renderCards(clicks) {
     card.className = 'btn-card';
     card.innerHTML = `
       ${rank <= 3 ? `<div class="rank-badge" style="background:${badgeColors[rank-1]}">${rank}</div>` : ''}
-      <img class="thumb" src="images/${id}_normal.png" onerror="this.style.opacity='0.15'">
+      <img class="thumb" src="images/${id}_face.png" onerror="this.style.opacity='0.15'">
       <div class="btn-label">${names[i] || `ปุ่มที่ ${num}`}</div>
       <div class="btn-count">${count.toLocaleString()}</div>
       <div class="btn-pct">${pct}%</div>
