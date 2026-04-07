@@ -203,7 +203,12 @@
       </div>
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <div class="cards-title" style="margin-bottom:0;">รายละเอียดแต่ละปุ่ม</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="cards-title" style="margin-bottom:0;">รายละเอียดแต่ละปุ่ม</div>
+          <button class="dash-btn" id="sort-btn" onclick="toggleSort()" style="font-size:0.78rem;padding:5px 12px;">
+            เรียง: ตามลำดับ
+          </button>
+        </div>
         <div style="display:flex;gap:8px;">
           <button class="dash-btn" onclick="exportExcel()">📥 Export Excel</button>
           <button class="dash-btn" style="border-color:#c0392b;color:#c0392b;" onclick="resetClicks()">🗑️ ล้างจำนวนคลิก</button>
@@ -435,17 +440,18 @@ async function resetClicks() {
     return;
   }
 
-  // ใช้ POST เหมือนกับการนับคลิก ซึ่งทำงานได้แน่นอน
-  fetch(url, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action: 'reset' })
-  }).catch(() => {});
+  // ใช้ iframe — เรียก GET โดยไม่มีปัญหา CORS เลย
+  const resetUrl = url + '?action=reset&t=' + Date.now();
+  const iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.src = resetUrl;
+  document.body.appendChild(iframe);
 
-  // รอ 2 วินาทีแล้วโหลดข้อมูลใหม่
-  alert('✅ ส่งคำสั่งล้างข้อมูลแล้ว กด OK แล้วรอสักครู่');
-  setTimeout(loadData, 2000);
+  setTimeout(() => {
+    document.body.removeChild(iframe);
+    loadData(); // โหลดข้อมูลใหม่
+    alert('✅ ล้างข้อมูลเรียบร้อยแล้ว');
+  }, 3000);
 }
 
 // ===== EXPORT EXCEL (CSV) =====
@@ -620,7 +626,22 @@ function renderChart(clicks) {
   });
 }
 
+let sortByClicks = false;
+
+function toggleSort() {
+  sortByClicks = !sortByClicks;
+  document.getElementById('sort-btn').textContent = sortByClicks ? 'เรียง: มาก→น้อย' : 'เรียง: ตามลำดับ';
+  // re-render with current clicks
+  const cards = document.querySelectorAll('.btn-card');
+  const clicks = Array.from({length:11}, (_,i) => {
+    const card = document.querySelector(`.btn-card:nth-child(${i+1}) .btn-count`);
+    return card ? parseInt(card.textContent.replace(/,/g,'')) || 0 : 0;
+  });
+  renderCards(window._lastClicks || new Array(11).fill(0));
+}
+
 function renderCards(clicks) {
+  window._lastClicks = clicks;
   const total = clicks.reduce((a,b) => a+b, 0);
   const names = getSetting('buttonNames', CONFIG.buttonNames);
   const container = document.getElementById('btn-cards');
@@ -629,16 +650,18 @@ function renderCards(clicks) {
   const rankMap = {};
   ranked.forEach((item,ri) => { rankMap[item.i] = ri+1; });
 
-  clicks.forEach((count, i) => {
+  // เรียงลำดับถ้าเปิด sort
+  let order = clicks.map((count, i) => ({count, i}));
+  if (sortByClicks) order.sort((a,b) => b.count - a.count);
+
+  order.forEach(({count, i}) => {
     const num = i+1;
     const id = num < 10 ? '0'+num : ''+num;
     const pct = total > 0 ? ((count/total)*100).toFixed(1) : '0.0';
     const rank = rankMap[i];
-    const badgeColors = ['#f0a500','#aab8c2','#cd7f32'];
     const card = document.createElement('div');
     card.className = 'btn-card';
     card.innerHTML = `
-      ${rank <= 3 ? `<div class="rank-badge" style="background:${badgeColors[rank-1]}">${rank}</div>` : ''}
       <img class="thumb" src="images/${id}_face.png" onerror="this.style.opacity='0.15'">
       <div class="btn-label">${names[i] || `ปุ่มที่ ${num}`}</div>
       <div class="btn-count">${count.toLocaleString()}</div>
