@@ -32,7 +32,7 @@ const CONFIG = {
   ],
 
   // --- URL ของ Google Apps Script ---
-  scriptUrl: 'YOUR_APPS_SCRIPT_URL_HERE',
+  scriptUrl: 'https://script.google.com/macros/s/AKfycbwx0DTMKzuE8Ziw5BbSWjBAjSj7xv1cQ06d2Wj02XS_PYl6ur-Rb-Jy1Exo5GgyefnD3g/exec',
 
   // --- รหัสผ่านหน้า Admin ---
   adminPassword: 'admin1234',
