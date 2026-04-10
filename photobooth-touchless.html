@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasySelfie Touchless</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .main-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            background: #000;
+        }
+
+        /* Canvas 16:9 */
+        .canvas-wrapper {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: #000;
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        #video.mirror {
+            transform: scaleX(-1);
+        }
+
+        #previewCanvas {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+
+        #overlayCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: none;
+        }
+
+        #handCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #captureCanvas, #finalCanvas {
+            display: none;
+        }
+
+        /* Hand Detection Zone */
+        .detection-zone {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 150px;
+            height: 150px;
+            border: 3px dashed rgba(255,255,255,0.5);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.3);
+            z-index: 5;
+        }
+
+        .detection-zone.active {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.2);
+        }
+
+        .hand-icon {
+            font-size: 50px;
+            margin-bottom: 10px;
+        }
+
+        .detection-text {
+            color: white;
+            font-size: 14px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        /* Instructions */
+        .instructions {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 50px;
+            font-size: 20px;
+            font-weight: 600;
+            z-index: 5;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Countdown */
+        .countdown {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 150px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 30px rgba(0,0,0,0.8);
+            z-index: 20;
+            display: none;
+        }
+
+        .countdown.active {
+            display: block;
+            animation: pulse 1s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+        }
+
+        /* Photo Counter */
+        .photo-counter {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 600;
+            z-index: 5;
+            display: none;
+        }
+
+        /* Review Screen */
+        .review-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a;
+            z-index: 30;
+            display: none;
+            flex-direction: column;
+        }
+
+        .review-screen.active {
+            display: flex;
+        }
+
+        .review-title {
+            color: white;
+            font-size: 32px;
+            font-weight: 600;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .review-photos {
+            flex: 1;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .review-photo {
+            flex: 1;
+            max-width: 30%;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .review-photo img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .review-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            padding: 30px;
+        }
+
+        .review-btn {
+            padding: 20px 60px;
+            border: none;
+            border-radius: 50px;
+            font-size: 24px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .review-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+            color: white;
+        }
+
+        .btn-retake {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .loading-text {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+
+        .loading-dots {
+            font-size: 50px;
+            letter-spacing: 10px;
+        }
+
+        .loading-dots span {
+            animation: blink 1.4s infinite;
+        }
+
+        .loading-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes blink {
+            0%, 20% { opacity: 0.2; }
+            50% { opacity: 1; }
+            100% { opacity: 0.2; }
+        }
+
+        /* Finger Count Display */
+        .finger-count {
+            position: absolute;
+            top: 200px;
+            right: 40px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 20px;
+            font-size: 24px;
+            font-weight: 600;
+            z-index: 6;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="canvas-wrapper">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="previewCanvas"></canvas>
+            <canvas id="overlayCanvas"></canvas>
+            <canvas id="handCanvas"></canvas>
+        </div>
+
+        <canvas id="captureCanvas"></canvas>
+        <canvas id="finalCanvas"></canvas>
+
+        <!-- Hand Detection Zone -->
+        <div class="detection-zone" id="detectionZone">
+            <div class="hand-icon">👋</div>
+            <div class="detection-text">ยกมือ 5 นิ้ว<br>ที่นี่</div>
+        </div>
+
+        <!-- Finger Count (Debug) -->
+        <div class="finger-count" id="fingerCount"></div>
+
+        <!-- Countdown -->
+        <div class="countdown" id="countdown">3</div>
+
+        <!-- Photo Counter -->
+        <div class="photo-counter" id="photoCounter">รูปที่ 1/3</div>
+
+        <!-- Instructions -->
+        <div class="instructions" id="instructions">
+            ยกมือ 5 นิ้วที่มุมขวาบน เพื่อเริ่มถ่ายรูป
+        </div>
+
+        <!-- Review Screen -->
+        <div class="review-screen" id="reviewScreen">
+            <div class="review-title">รูปของคุณ 📸</div>
+            <div class="review-photos" id="reviewPhotos"></div>
+            <div class="review-buttons">
+                <button class="review-btn btn-retake" id="retakeBtn">🔄 ถ่ายใหม่</button>
+                <button class="review-btn btn-save" id="saveBtn">💾 บันทึก</button>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-content">
+                <div class="loading-text">กำลังบันทึกรูปภาพ<br>กรุณารอสักครู่...</div>
+                <div class="loading-dots">
+                    <span>.</span><span>.</span><span>.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+    <script>
+        // Configuration
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxH1YFbtWakbCdZcSk3WVgqg0YUnvFtotznN-UlnYYBViq0fmxxz-2Kp9cI2AYuTp0vlw/exec';
+        const OVERLAY_IMAGE_URL = './images/overlay-landscape.png'; // ต้องเตรียม overlay 16:9
+        
+        // Canvas size 16:9
+        const CANVAS_WIDTH = 1920;
+        const CANVAS_HEIGHT = 1080;
+
+        // State
+        let currentState = 'STANDBY'; // STANDBY, CAPTURING, REVIEW, SAVING
+        let capturedPhotos = [];
+        let overlayImage = null;
+        let stream = null;
+        let hands = null;
+        let camera = null;
+
+        // Elements
+        const video = document.getElementById('video');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const overlayCanvas = document.getElementById('overlayCanvas');
+        const handCanvas = document.getElementById('handCanvas');
+        const captureCanvas = document.getElementById('captureCanvas');
+        const finalCanvas = document.getElementById('finalCanvas');
+        
+        const previewCtx = previewCanvas.getContext('2d');
+        const overlayCtx = overlayCanvas.getContext('2d');
+        const handCtx = handCanvas.getContext('2d');
+        const captureCtx = captureCanvas.getContext('2d');
+        const finalCtx = finalCanvas.getContext('2d');
+
+        const detectionZone = document.getElementById('detectionZone');
+        const countdown = document.getElementById('countdown');
+        const photoCounter = document.getElementById('photoCounter');
+        const instructions = document.getElementById('instructions');
+        const reviewScreen = document.getElementById('reviewScreen');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const fingerCount = document.getElementById('fingerCount');
+
+        // Load overlay image
+        function loadImage(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = url;
+            });
+        }
+
+        async function loadOverlayImage() {
+            try {
+                overlayImage = await loadImage(OVERLAY_IMAGE_URL);
+                drawOverlay();
+                return true;
+            } catch (error) {
+                console.error('Cannot load overlay:', error);
+                alert('ไม่พบไฟล์ overlay-landscape.png\n\nกรุณาเตรียมไฟล์ขนาด 1920x1080 pixels');
+                return false;
+            }
+        }
+
+        function drawOverlay() {
+            if (!overlayImage) return;
+            overlayCanvas.width = CANVAS_WIDTH;
+            overlayCanvas.height = CANVAS_HEIGHT;
+            overlayCanvas.style.display = 'block';
+            overlayCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            overlayCtx.drawImage(overlayImage, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        }
+
+        // MediaPipe Hands
+        async function setupHandDetection() {
+            hands = new Hands({
+                locateFile: (file) => {
+                    return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+                }
+            });
+
+            hands.setOptions({
+                maxNumHands: 1,
+                modelComplexity: 1,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+
+            hands.onResults(onHandsResults);
+        }
+
+        function onHandsResults(results) {
+            // Clear hand canvas
+            handCtx.clearRect(0, 0, handCanvas.width, handCanvas.height);
+
+            // Only detect in STANDBY state
+            if (currentState !== 'STANDBY') {
+                fingerCount.style.display = 'none';
+                return;
+            }
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+                
+                // Count fingers
+                const fingers = countFingers(landmarks);
+                
+                // Get hand position (wrist)
+                const handX = landmarks[0].x;
+                const handY = landmarks[0].y;
+                
+                // Debug: show finger count
+                fingerCount.textContent = `${fingers} นิ้ว`;
+                fingerCount.style.display = 'block';
+                
+                // Check if in trigger zone (top-right corner)
+                const inZone = isInTriggerZone(handX, handY);
+                
+                if (inZone) {
+                    detectionZone.classList.add('active');
+                    
+                    // Trigger photo session if 5 fingers detected
+                    if (fingers === 5) {
+                        startPhotoSession();
+                    }
+                } else {
+                    detectionZone.classList.remove('active');
+                }
+            } else {
+                fingerCount.style.display = 'none';
+                detectionZone.classList.remove('active');
+            }
+        }
+
+        function countFingers(landmarks) {
+            let count = 0;
+            
+            // Thumb (check x position)
+            if (landmarks[4].x < landmarks[3].x) count++;
+            
+            // Other fingers (check y position - tip vs pip)
+            const fingers = [8, 12, 16, 20]; // index, middle, ring, pinky
+            for (let tip of fingers) {
+                if (landmarks[tip].y < landmarks[tip - 2].y) count++;
+            }
+            
+            return count;
+        }
+
+        function isInTriggerZone(x, y) {
+            // Top-right corner (80-100% x, 0-20% y)
+            return x > 0.8 && y < 0.2;
+        }
+
+        // Start camera
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'user',
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    }
+                });
+                
+                video.srcObject = stream;
+                video.classList.add('mirror');
+                video.style.display = 'block';
+                overlayCanvas.style.display = 'block';
+
+                // Setup MediaPipe camera
+                camera = new Camera(video, {
+                    onFrame: async () => {
+                        await hands.send({ image: video });
+                    },
+                    width: 1920,
+                    height: 1080
+                });
+                
+                await camera.start();
+                return true;
+
+            } catch (error) {
+                console.error('Camera error:', error);
+                alert('ไม่สามารถเปิดกล้องได้');
+                return false;
+            }
+        }
+
+        // Photo session
+        async function startPhotoSession() {
+            if (currentState !== 'STANDBY') return;
+            
+            currentState = 'CAPTURING';
+            capturedPhotos = [];
+            
+            // Hide instructions
+            instructions.style.display = 'none';
+            detectionZone.style.display = 'none';
+            photoCounter.style.display = 'block';
+
+            try {
+                // Capture 3 photos
+                for (let i = 0; i < 3; i++) {
+                    photoCounter.textContent = `รูปที่ ${i + 1}/3`;
+                    
+                    // Countdown
+                    await showCountdown(3);
+                    
+                    // Capture
+                    const photo = await capturePhoto();
+                    capturedPhotos.push(photo);
+                    
+                    // Short pause
+                    await sleep(500);
+                }
+
+                // Show review
+                showReview();
+
+            } catch (error) {
+                console.error('Photo session error:', error);
+                resetToStandby();
+            }
+        }
+
+        async function showCountdown(seconds) {
+            for (let i = seconds; i > 0; i--) {
+                countdown.textContent = i;
+                countdown.classList.add('active');
+                await sleep(1000);
+                countdown.classList.remove('active');
+            }
+        }
+
+        async function capturePhoto() {
+            // Capture from video
+            captureCanvas.width = video.videoWidth;
+            captureCanvas.height = video.videoHeight;
+            
+            // Mirror for front camera
+            captureCtx.save();
+            captureCtx.scale(-1, 1);
+            captureCtx.drawImage(video, -video.videoWidth, 0);
+            captureCtx.restore();
+
+            const capturedImage = await loadImage(captureCanvas.toDataURL());
+
+            // Create final image with overlay
+            finalCanvas.width = CANVAS_WIDTH;
+            finalCanvas.height = CANVAS_HEIGHT;
+
+            const scale = Math.max(CANVAS_WIDTH / capturedImage.width, CANVAS_HEIGHT / capturedImage.height);
+            const scaledWidth = capturedImage.width * scale;
+            const scaledHeight = capturedImage.height * scale;
+            const x = (CANVAS_WIDTH - scaledWidth) / 2;
+            const y = (CANVAS_HEIGHT - scaledHeight) / 2;
+
+            finalCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            finalCtx.drawImage(capturedImage, x, y, scaledWidth, scaledHeight);
+            finalCtx.drawImage(overlayImage, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            return finalCanvas.toDataURL('image/jpeg', 0.9);
+        }
+
+        function showReview() {
+            currentState = 'REVIEW';
+            photoCounter.style.display = 'none';
+
+            // Show 3 photos
+            const reviewPhotos = document.getElementById('reviewPhotos');
+            reviewPhotos.innerHTML = '';
+
+            capturedPhotos.forEach((photoData, index) => {
+                const div = document.createElement('div');
+                div.className = 'review-photo';
+                
+                const img = document.createElement('img');
+                img.src = photoData;
+                img.alt = `Photo ${index + 1}`;
+                
+                div.appendChild(img);
+                reviewPhotos.appendChild(div);
+            });
+
+            reviewScreen.classList.add('active');
+        }
+
+        // Save photos
+        document.getElementById('saveBtn').addEventListener('click', async () => {
+            currentState = 'SAVING';
+            loadingOverlay.classList.add('active');
+
+            try {
+                // Upload all 3 photos
+                await Promise.all(capturedPhotos.map((photoData, index) => {
+                    const filename = `photo-${Date.now()}-${index + 1}.jpg`;
+                    return uploadToDrive(photoData, filename);
+                }));
+
+                loadingOverlay.classList.remove('active');
+                alert('บันทึกสำเร็จ! ✅');
+                resetToStandby();
+
+            } catch (error) {
+                console.error('Save error:', error);
+                loadingOverlay.classList.remove('active');
+                alert('เกิดข้อผิดพลาด ❌\n\n' + error.message);
+                currentState = 'REVIEW';
+            }
+        });
+
+        // Retake
+        document.getElementById('retakeBtn').addEventListener('click', () => {
+            resetToStandby();
+        });
+
+        // Reset to standby
+        function resetToStandby() {
+            currentState = 'STANDBY';
+            capturedPhotos = [];
+            
+            reviewScreen.classList.remove('active');
+            instructions.style.display = 'block';
+            detectionZone.style.display = 'flex';
+            photoCounter.style.display = 'none';
+        }
+
+        // Upload to Google Drive
+        async function uploadToDrive(imageData, filename) {
+            const response = await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    image: imageData,
+                    filename: filename
+                })
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.error || 'Upload failed');
+            }
+
+            console.log('Uploaded:', filename);
+        }
+
+        // Utility
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Initialize
+        window.addEventListener('load', async () => {
+            // Set canvas sizes
+            handCanvas.width = window.innerWidth;
+            handCanvas.height = window.innerHeight;
+
+            // Load overlay
+            const overlayLoaded = await loadOverlayImage();
+            if (!overlayLoaded) return;
+
+            // Setup hand detection
+            await setupHandDetection();
+
+            // Start camera
+            await startCamera();
+
+            console.log('✅ Touchless Photo Booth Ready!');
+        });
+    </script>
+</body>
+</html>
